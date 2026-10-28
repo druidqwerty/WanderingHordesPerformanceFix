@@ -1,0 +1,10 @@
+name=Wandering Hordes Save Trim [B42]
+id=WanderingHordesSaveTrim
+author=druid
+description=Add-on for Wandering Hordes: stops its wall map from bloating the save and freezing the server at every world save. Wandering Hordes remembers walls and fences for every tile any player has ever been near (global ModData WH_PassabilityGrid_v2) and never forgets any; on a real co-op save that was 58 MB of a 76 MB global_mod_data.bin, which the game writes on the server's main thread at every save (0.3 s freeze every 5 minutes, 6.3 s on the first save after a start) and reads at every start (7 s). This add-on keeps that map only within 400 tiles (setting) of the players, of where they joined the game (usually the base, also while they are away on a trip), of where offline players were last seen and of safehouses; far away Wandering Hordes simply scans the area again when someone comes back. Near the players nothing changes. Pure Lua, Wandering Hordes itself is not changed. Settings: the host's sandbox options, page Wandering Hordes Save Trim (an admin can change them in a running game). Works in single player and multiplayer (needed on the server; every player should have it too).
+require=\WanderingHordesCore
+category=mechanic
+versionMin=42.21
+modversion=1.0.0
+poster=poster.png
+icon=icon.png

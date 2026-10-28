@@ -1,0 +1,66 @@
+title=Wandering Hordes Save Trim [B42] — без подвисаний при сохранении
+description=[h1]Wandering Hordes без раздутого сохранения[/h1]
+description=Дополнение к [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3759920384]Wandering Hordes[/url]. Wandering Hordes запоминает стены, заборы и воду для каждой клетки, рядом с которой хоть раз был игрок («карта проходимости» в глобальных ModData), и ничего не забывает. Игра пишет все глобальные ModData в global_mod_data.bin при каждом сохранении мира, в главном потоке сервера, и читает их целиком при каждом запуске.
+description=
+description=[url=https://boosty.to/lrgpp][img]https://raw.githubusercontent.com/druidqwerty/WanderingHordesSaveTrim/main/docs/banner.png[/img][/url]
+description=Бесплатно и с открытым кодом. Код пишет ИИ; идея, тесты и время — мои. Если мод сделал вашу игру лучше: [url=https://boosty.to/lrgpp]поддержать на Boosty[/url].
+description=
+description=[h2]Что не так без него[/h2]
+description=На нашем кооп-сохранении на двоих:
+description=[list]
+description=[*]Карта стен занимала [b]58 МБ из 76 МБ[/b] global_mod_data.bin и росла с каждой поездкой.
+description=[*]Каждое сохранение мира (раз в 5 минут) подвешивало сервер на ~0,3 с; [b]первое после запуска — 6,3 с[/b] с паузой у всех игроков.
+description=[*]Загрузка занимала [b]6,9 с[/b] при каждом запуске сервера и больше 400 МБ памяти.
+description=[/list]
+description=
+description=[h2]Что делает дополнение[/h2]
+description=[list]
+description=[*]Раз в 2 минуты проходит по карте (по несколько сотен ячеек за тик) и забывает всё, что дальше 400 клеток от игроков, от места, где каждый вошёл в игру (обычно база, в том числе пока вы в поездке), от мест офлайн-игроков и от убежищ.
+description=[*]Рядом с игроками ничего не меняется: 400 клеток покрывают всё, что проверяет Wandering Hordes, когда орда появляется рядом с игроком.
+description=[*]Вдали Wandering Hordes просто сканирует место заново, когда туда вернутся, как новое.
+description=[*]Одиночная игра и мультиплеер. Сам Wandering Hordes не меняется.
+description=[/list]
+description=
+description=[h2]Живой тест[/h2]
+description=Локальный сервер и клиент, Wandering Hordes [Core] + Vanilla+, наш настоящий global_mod_data.bin на 76 МБ, сохранение каждую минуту, поездка база — 1,8 км — 3,4 км — база с ордами:
+description=[table]
+description=[tr][th][/th][th]без дополнения[/th][th]с дополнением[/th][/tr]
+description=[tr][td]Карта стен[/td][td]36 646 ячеек, 58 МБ[/td][td]4 221 ячейка, 7 МБ[/td][/tr]
+description=[tr][td]global_mod_data.bin[/td][td]76,1 МБ[/td][td]25,0 МБ[/td][/tr]
+description=[tr][td]Подвисание на ModData при сохранении[/td][td]0,33–0,43 с (раз 2,0 с)[/td][td]0,10–0,17 с[/td][/tr]
+description=[tr][td]Первое сохранение после запуска[/td][td]8,2 с[/td][td]0,55 с[/td][/tr]
+description=[/table]
+description=Первая проверка старой карты: 9 с на 92 тика, ~0,5 мс за тик; следующие — меньше 1 мс за тик. Проверка Wandering Hordes, где может появиться орда, даёт у базы те же ответы с дополнением и без, в том числе после поездок без убежища. Орды появляются как обычно, ошибок Lua нет.
+description=
+description=[h2]Установка[/h2]
+description=[list]
+description=[*]Build 42.21+ и [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3759920384]Wandering Hordes[/url] [Core]. Без Java и ZombieBuddy.
+description=[*]Мультиплеер: на сервере добавьте [b]WanderingHordesSaveTrim[/b] в Mods= (после WanderingHordesCore) и [b]3829140377[/b] в WorkshopItems=.
+description=[*]Можно добавить в идущее сохранение: файл уменьшится при следующем сохранении мира. Убрать потом тоже безопасно.
+description=[/list]
+description=
+description=[h2]Настройки[/h2]
+description=Хост > Управление настройками > Изменить > Песочница > [b]Wandering Hordes: Save Trim[/b], одни на всех; админ может менять их в идущей игре: обрезка (вкл.), радиус (400), хранить вокруг места входа, офлайн-игроков и убежищ (вкл.), проверять каждые 2 минуты, отладочный лог (выкл.).
+description=
+description=[h2]Ограничения[/h2]
+description=[list]
+description=[*]Обрезанное место для Wandering Hordes — как новое: 30 клеток вокруг игрока он сканирует сразу, остальное — по мере прогулки; до этого орда может появиться внутри большой огороженной территории, которую он ещё не знает. База хранится; другие важные места сделайте убежищем или увеличьте радиус.
+description=[*]Трогает только таблицу Wandering Hordes; данные других модов остаются.
+description=[/list]
+description=
+description=Версия 1.0.0. Код (MIT): [url=https://github.com/druidqwerty/WanderingHordesSaveTrim]github.com/druidqwerty/WanderingHordesSaveTrim[/url]. Wandering Hordes — автор SpaceGamer_R.
+description=
+description=[h2]Мои моды[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3827367565]SmoothRide MP[/url] — плавные машины в мультиплеере.
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115]ZombieSync MP[/url] — плавные зомби в мультиплеере.
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899]Tripping Zombies MP Fix[/url] — одинаковые падения Tripping Zombies у всех игроков.
+description=[*][b]Wandering Hordes Save Trim[/b] — без подвисаний сервера из-за карты стен Wandering Hordes (этот мод).
+description=[/list]
+description=
+description=[h2]Обратите внимание[/h2]
+description=[list]
+description=[*]Код написан ИИ, а не человеком.
+description=[*]Сделан для игры с другом.
+description=[*]Проверен на локальном сервере с копией наших настоящих данных; сессия с другом ещё впереди.
+description=[/list]

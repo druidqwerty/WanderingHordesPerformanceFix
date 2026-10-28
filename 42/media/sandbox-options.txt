@@ -1,0 +1,61 @@
+VERSION = 1,
+
+option WHSaveTrim.Enabled
+{
+    type = boolean,
+    default = true,
+    page = WHSaveTrim,
+    translation = WHSaveTrim_Enabled,
+}
+
+option WHSaveTrim.KeepRadius
+{
+    type = integer,
+    min = 100,
+    max = 5000,
+    default = 400,
+    page = WHSaveTrim,
+    translation = WHSaveTrim_KeepRadius,
+}
+
+option WHSaveTrim.KeepJoinSpots
+{
+    type = boolean,
+    default = true,
+    page = WHSaveTrim,
+    translation = WHSaveTrim_KeepJoinSpots,
+}
+
+option WHSaveTrim.KeepOfflinePlayers
+{
+    type = boolean,
+    default = true,
+    page = WHSaveTrim,
+    translation = WHSaveTrim_KeepOfflinePlayers,
+}
+
+option WHSaveTrim.KeepSafehouses
+{
+    type = boolean,
+    default = true,
+    page = WHSaveTrim,
+    translation = WHSaveTrim_KeepSafehouses,
+}
+
+option WHSaveTrim.IntervalMinutes
+{
+    type = integer,
+    min = 1,
+    max = 60,
+    default = 2,
+    page = WHSaveTrim,
+    translation = WHSaveTrim_IntervalMinutes,
+}
+
+option WHSaveTrim.Log
+{
+    type = boolean,
+    default = false,
+    page = WHSaveTrim,
+    translation = WHSaveTrim_Log,
+}

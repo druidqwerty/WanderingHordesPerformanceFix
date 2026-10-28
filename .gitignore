@@ -1,0 +1,24 @@
+# Build output
+build/
+dist/
+
+# Live test output and save copies
+livetest/env/
+livetest/results/
+data/
+*.bin
+*.db
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+console.txt

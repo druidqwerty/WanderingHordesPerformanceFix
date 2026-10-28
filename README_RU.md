@@ -154,7 +154,7 @@ Wandering Hordes читает карту только чтобы провери�
 - [ZombieSync MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115) — плавные зомби в мультиплеере.
 - [Tripping Zombies MP Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899) — одинаковые падения Tripping Zombies у всех игроков.
 - **Wandering Hordes Save Trim** — без подвисаний сервера при сохранении из-за карты стен Wandering Hordes (этот мод).
-- [Host Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — лечит и ускоряет загрузку мастерской при запуске своего сервера.
+- [Download Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — лечит и ускоряет загрузку мастерской при запуске своего сервера.
 
 ## Авторы и лицензия
 

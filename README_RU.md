@@ -149,6 +149,13 @@ Wandering Hordes читает карту только чтобы провери�
   его мод-помощник.
 - `python tools/build.py --no-install --no-staging`: офлайн-тесты, затем папка мода и zip в `dist/`.
 
+## Мои моды
+- [SmoothRide MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827367565) — плавные машины в мультиплеере.
+- [ZombieSync MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115) — плавные зомби в мультиплеере.
+- [Tripping Zombies MP Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899) — одинаковые падения Tripping Zombies у всех игроков.
+- **Wandering Hordes Save Trim** — без подвисаний сервера при сохранении из-за карты стен Wandering Hordes (этот мод).
+- [Host Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — лечит и ускоряет загрузку мастерской при запуске своего сервера.
+
 ## Авторы и лицензия
 
 Wandering Hordes — автор SpaceGamer_R; это дополнение работает только вместе с ним.

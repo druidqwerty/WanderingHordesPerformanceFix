@@ -1,0 +1,4 @@
+name=WH Perf Probe (test only)
+id=WHPerfProbe
+description=Times the event handlers of Wandering Hordes and the add-on. Test only.
+versionMin=42.0.0

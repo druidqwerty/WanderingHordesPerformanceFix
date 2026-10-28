@@ -1,4 +1,4 @@
--- Wandering Hordes Save Trim live-test helper, server side (test only, never shipped).
+-- Wandering Hordes Performance Fix live-test helper, server side (test only, never shipped).
 -- Logs the server's copy of WH's grid (buckets every 30 s, scanned tiles around each player every 2 s),
 -- the add-on's status, zombies loaded; on request probes WH's own spawn-safety check around a player
 -- and adds a safehouse.
@@ -46,16 +46,27 @@ Events.OnTick.Add(function()
         local n = 0
         local a = getTimestampMs()
         if g then for _ in pairs(g) do n = n + 1 end end
-        local st = WHSaveTrim and WHSaveTrim.status and WHSaveTrim.status() or nil
+        local st = WHPerfFix and WHPerfFix.Trim and WHPerfFix.Trim.status() or nil
         local l = st and st.last or nil
-        local zombies = 0
-        pcall(function() zombies = getCell():getZombieList():size() end)
-        local sv = SandboxVars and SandboxVars.WHSaveTrim or {}
-        log(string.format("srv grid=%d buckets (counted in %d ms) zombies=%d trim passes=%s running=%s last: checked=%s removed=%s kept=%s radius=%s ticks=%s ms=%s | sandbox Enabled=%s KeepRadius=%s Interval=%s Log=%s",
-            n, getTimestampMs() - a, zombies, tostring(st and st.passes), tostring(st and st.running),
+        local zombies, flagged = 0, 0
+        pcall(function()
+            local list = getCell():getZombieList()
+            zombies = list:size()
+            for i = 0, zombies - 1 do
+                local md = list:get(i):getModData()
+                if md and (md.isWandering or md.whVirtualId ~= nil or md.isSprinter or md.wanderingdelete) then
+                    flagged = flagged + 1
+                end
+            end
+        end)
+        local sv = SandboxVars and SandboxVars.WHPerfFix or {}
+        local on, off = -1, -1
+        if WHPerfFix and WHPerfFix.clientStatus then on, off = WHPerfFix.clientStatus() end
+        log(string.format("srv grid=%d buckets (counted in %d ms) zombies=%d withWHmodData=%d whHandlers run=%d held=%d trim passes=%s running=%s last: checked=%s removed=%s kept=%s radius=%s ticks=%s ms=%s | sandbox ClientOffload=%s TrimWallMap=%s KeepRadius=%s Interval=%s Log=%s",
+            n, getTimestampMs() - a, zombies, flagged, on, off, tostring(st and st.passes), tostring(st and st.running),
             tostring(l and l.checked), tostring(l and l.removed), tostring(l and l.kept), tostring(l and l.radius),
-            tostring(l and l.ticks), tostring(l and l.ms), tostring(sv.Enabled), tostring(sv.KeepRadius),
-            tostring(sv.IntervalMinutes), tostring(sv.Log)))
+            tostring(l and l.ticks), tostring(l and l.ms), tostring(sv.ClientOffload), tostring(sv.TrimWallMap),
+            tostring(sv.KeepRadius), tostring(sv.TrimIntervalMinutes), tostring(sv.Log)))
     end
 end)
 
@@ -105,6 +116,22 @@ Events.OnClientCommand.Add(function(module, command, player, args)
         end
     elseif command == "probe" then
         lastGrid = 0
+    elseif command == "tpwh" then
+        -- the Wandering Hordes zombie (modData flags of its server code) nearest to the player
+        local best, bx, by, n = nil, nil, nil, 0
+        local px, py = player:getX(), player:getY()
+        local list = getCell():getZombieList()
+        for i = 0, list:size() - 1 do
+            local z = list:get(i)
+            local md = z:getModData()
+            if md and (md.isWandering or md.whVirtualId ~= nil) then
+                n = n + 1
+                local d = (z:getX() - px) ^ 2 + (z:getY() - py) ^ 2
+                if not best or d < best then best, bx, by = d, z:getX(), z:getY() end
+            end
+        end
+        log(string.format("tpwh: %d WH zombie(s), nearest at %s,%s", n, tostring(bx), tostring(by)))
+        sendServerCommand(player, "WHTrimTest", "tpwh", bx and { x = bx, y = by, n = n } or {})
     end
 end)
 

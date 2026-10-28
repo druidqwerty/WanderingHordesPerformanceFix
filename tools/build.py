@@ -1,16 +1,17 @@
-"""Build Wandering Hordes Save Trim: offline tests, dist folder + release zip, local install, Steam staging.
+"""Build Wandering Hordes Performance Fix: offline tests, dist folder + release zip, local install, Steam staging.
 Nothing is uploaded or published.
 
   python -I build.py [--no-tests] [--no-install] [--no-staging]
   JDK=<jdk bin folder> GAME=<Project Zomboid folder> override the defaults below.
 
-Works in the dev workspace (mod/WanderingHordesSaveTrim/, docs/README*.md) and in the GitHub repo (the mod's
-42/ at the root, README*.md at the root).
-- dist/WanderingHordesSaveTrim/ (common/ + 42/) and dist/WanderingHordesSaveTrim_<version>.zip with README.md,
-  README_RU.txt, LICENSE and the mod folder
-- installs a copy to ~/Zomboid/mods/WanderingHordesSaveTrim
-- Steam staging ~/Zomboid/Workshop/WanderingHordesSaveTrim: Contents/mods/WanderingHordesSaveTrim, preview.png,
-  workshop.txt (EN, visibility=public, id=) and workshop_russian.txt (RU, for pz-vehsync/tools/wsdesc) from docs/
+Works in the dev workspace (mod/WanderingHordesPerformanceFix/, docs/README*.md) and in the GitHub repo (the
+mod's 42/ at the root, README*.md at the root).
+- dist/WanderingHordesPerformanceFix/ (common/ + 42/) and dist/WanderingHordesPerformanceFix_<version>.zip with
+  README.md, README_RU.txt, LICENSE and the mod folder
+- installs a copy to ~/Zomboid/mods/WanderingHordesPerformanceFix
+- Steam staging ~/Zomboid/Workshop/WanderingHordesPerformanceFix: Contents/mods/WanderingHordesPerformanceFix,
+  preview.png, workshop.txt (EN, visibility=public, id=) and workshop_russian.txt (RU, for pz-vehsync/tools/wsdesc)
+  from docs/
 """
 import hashlib
 import os
@@ -20,7 +21,7 @@ import subprocess
 import sys
 import zipfile
 
-NAME = "WanderingHordesSaveTrim"
+NAME = "WanderingHordesPerformanceFix"
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJ = os.path.dirname(HERE)
 MOD = os.path.join(PROJ, "mod", NAME)
@@ -30,7 +31,8 @@ DIST = os.path.join(PROJ, "dist")
 HOME = os.path.expanduser("~")
 INSTALL = os.path.join(HOME, "Zomboid", "mods", NAME)
 STAGING = os.path.join(HOME, "Zomboid", "Workshop", NAME)
-LUA = os.path.join("42", "media", "lua", "server", NAME, "WHSaveTrim.lua")
+SHARED = os.path.join("42", "media", "lua", "shared", NAME, "WHPerfFix_Shared.lua")
+TRIM = os.path.join("42", "media", "lua", "server", NAME, "WHPerfFix_Trim.lua")
 
 
 def version():
@@ -68,16 +70,20 @@ def offline_tests():
     subprocess.run([os.path.join(JDK, "javac"), "-encoding", "UTF-8", "-cp", jar, "-d", out,
                     os.path.join(HERE, "LuaCheck.java"), os.path.join(HERE, "LuaRun.java")], check=True)
     cp = out + ";" + jar
-    lua = os.path.join(MOD, LUA)
+    shared, trim = os.path.join(MOD, SHARED), os.path.join(MOD, TRIM)
     helper = os.path.join(PROJ, "test", "WHTrimTest", "42", "media", "lua")
-    r1 = subprocess.run([os.path.join(JDK, "java"), "-cp", cp, "LuaCheck", lua,
+    r1 = subprocess.run([os.path.join(JDK, "java"), "-cp", cp, "LuaCheck", shared, trim,
                          os.path.join(helper, "client", "WHTrimTest.lua"),
                          os.path.join(helper, "server", "WHTrimTest_Server.lua")], capture_output=True, text=True)
     t = os.path.join(PROJ, "test", "offline")
-    files = [os.path.join(t, "mocks.lua")]
-    for side in ("server", "client", "sp"):
-        files += [os.path.join(t, "reset_%s.lua" % side), lua, os.path.join(t, "tests_%s.lua" % side)]
-    files.append(os.path.join(t, "summary.lua"))
+    f = lambda name: os.path.join(t, name)   # noqa: E731
+    files = [f("mocks.lua")]
+    for side in ("server", "client", "sp", "migrate"):   # the trim (and the take-over of the 1.0.0 table)
+        files += [f("reset_%s.lua" % side), shared, trim, f("tests_%s.lua" % side)]
+    for reset, tests in (("client", "tests_offload.lua"), ("server", "tests_offload_server.lua"),
+                         ("sp", "tests_offload_server.lua"), ("sp", "tests_offload_late.lua")):   # the shared part
+        files += [f("reset_offload_%s.lua" % reset), shared, f("wh_fake_server.lua"), f(tests)]
+    files.append(f("summary.lua"))
     r2 = subprocess.run([os.path.join(JDK, "java"), "-cp", cp, "LuaRun"] + files,
                         capture_output=True, text=True, cwd=GAME)   # stdlib.lua is read from the game folder
     lines = [ln for ln in (r1.stdout + r2.stdout + r2.stderr).splitlines() if ln.startswith("ok ")
@@ -105,7 +111,8 @@ def main():
             for f in sorted(files):
                 z.write(os.path.join(root, f), rel + "/" + f)
     print(f"version {v}\n  {zpath} {os.path.getsize(zpath)} bytes sha256 {sha(zpath)}\n"
-          f"  WHSaveTrim.lua sha256 {sha(os.path.join(out, LUA))}")
+          f"  WHPerfFix_Shared.lua sha256 {sha(os.path.join(out, SHARED))}\n"
+          f"  WHPerfFix_Trim.lua sha256 {sha(os.path.join(out, TRIM))}")
     if "--no-install" not in sys.argv:
         copy_mod(INSTALL)
         print("installed:", INSTALL)
@@ -121,6 +128,9 @@ def main():
                 desc = sum(len(ln[len("description="):].encode("utf-8")) + 1
                            for ln in open(src, encoding="utf-8") if ln.startswith("description="))
                 print(f"staging {name}: {n} bytes, description {desc} bytes (Steam limit 8000)")
+        req = os.path.join(PROJ, "docs", "requires.txt")   # Workshop "Required items" for wsdesc --deps
+        if os.path.isfile(req):
+            shutil.copy(req, os.path.join(STAGING, "requires.txt"))
         print("staging:", STAGING)
 
 

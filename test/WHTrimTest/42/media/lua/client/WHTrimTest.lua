@@ -1,10 +1,11 @@
--- Wandering Hordes Save Trim live-test helper (test only, never shipped). Joins the test server, clicks
+-- Wandering Hordes Performance Fix live-test helper (test only, never shipped). Joins the test server, clicks
 -- through character creation, then runs a scripted tour from Lua/WHTrimTest.txt (script=step;step;...):
 --   wait:SEC        tp:X,Y (admin /teleportto)        spawn (Wandering Hordes ForceSpawn near the player)
 --   enc             the server probes WH's own spawn-safety check (isSquareSafeForSpawn) around the player
---   sh:X,Y,W,H      the server adds a safehouse there   sb:Key=Value  admin sandbox change WHSaveTrim.Key
+--   sh:X,Y,W,H      the server adds a safehouse there   sb:Key=Value  admin sandbox change WHPerfFix.Key
 --   done            writes WHTrimTest_done.txt
--- Every 10 s it logs the size of THIS client's own copy of WH's grid (B42 runs WH's scanners on clients too).
+-- Every 10 s it logs the size of THIS client's own copy of WH's grid (B42 would run WH's scanners on clients
+-- too), how many of WH's server handlers run here, and how many loaded zombies carry WH's modData flags.
 
 local function log(msg) print("[WHTrimTest] " .. tostring(msg)) end
 local GRID = "WH_PassabilityGrid_v2"
@@ -79,13 +80,38 @@ local function gridStats(p)
     return n, near
 end
 
+-- loaded zombies, and how many of them carry Wandering Hordes' modData flags (set by its server code);
+-- also the modData keys seen on this client's zombies (anything at all synced from the server?)
+local function zombieFlags()
+    local n, flagged, keys = 0, 0, {}
+    pcall(function()
+        local list = getCell():getZombieList()
+        n = list:size()
+        for i = 0, n - 1 do
+            local z = list:get(i)
+            local md = z and z:getModData() or nil
+            if md and (md.isWandering or md.whVirtualId ~= nil or md.isSprinter or md.wanderingdelete) then
+                flagged = flagged + 1
+            end
+            if md then
+                for k in pairs(md) do keys[tostring(k)] = true end
+            end
+        end
+    end)
+    local list = {}
+    for k in pairs(keys) do list[#list + 1] = k end
+    table.sort(list)
+    return n, flagged, table.concat(list, ",")
+end
+
 local steps, idx, stepAt, t0, lastReport = nil, 1, nil, nil, 0
 local tp = nil   -- {x, y, tries, at}: a teleport that has not arrived yet (the server sometimes ignores one)
 
 local function teleport(p, x, y)
     SendCommandToServer("/teleportto " .. x .. "," .. y .. ",0")
     if tp.tries > 3 then   -- fallback: move the player ourselves
-        p:setX(x + 0.5); p:setY(y + 0.5); p:setLx(x + 0.5); p:setLy(y + 0.5)
+        p:setX(x + 0.5); p:setY(y + 0.5)
+        pcall(function() p:setLastX(x + 0.5); p:setLastY(y + 0.5) end)
     end
 end
 
@@ -120,16 +146,16 @@ local function sandboxChange(p, kv)
     if not key then return end
     local opts = SandboxOptions.new()
     opts:copyValuesFrom(getSandboxOptions())
-    local o = opts:getOptionByName("WHSaveTrim." .. key)
+    local o = opts:getOptionByName("WHPerfFix." .. key)
     if not o then
-        log("sandbox option WHSaveTrim." .. key .. " not found")
+        log("sandbox option WHPerfFix." .. key .. " not found")
         return
     end
     if value == "true" then o:setValue(true)
     elseif value == "false" then o:setValue(false)
     else o:setValue(tonumber(value) or value) end
     opts:sendToServer()
-    log("sent sandbox change WHSaveTrim." .. key .. "=" .. value)
+    log("sent sandbox change WHPerfFix." .. key .. "=" .. value)
 end
 
 Events.OnTick.Add(function()
@@ -143,19 +169,25 @@ Events.OnTick.Add(function()
         steps = parseScript(c.script)
         stepAt = now + 8000      -- let the world settle after the join
         log("in game at " .. math.floor(p:getX()) .. "," .. math.floor(p:getY()) .. "; script " .. #steps .. " steps")
-        if SandboxVars and SandboxVars.WHSaveTrim then
-            local s = SandboxVars.WHSaveTrim
-            log("client sees sandbox WHSaveTrim Enabled=" .. tostring(s.Enabled) .. " KeepRadius=" .. tostring(s.KeepRadius))
+        if SandboxVars and SandboxVars.WHPerfFix then
+            local s = SandboxVars.WHPerfFix
+            log("client sees sandbox WHPerfFix ClientOffload=" .. tostring(s.ClientOffload) .. " TrimWallMap="
+                .. tostring(s.TrimWallMap) .. " KeepRadius=" .. tostring(s.KeepRadius))
         end
     end
     if now - lastReport >= 10000 then
         lastReport = now
         local n, near = gridStats(p)
-        local st = WHSaveTrim and WHSaveTrim.status and WHSaveTrim.status() or nil
+        local st = WHPerfFix and WHPerfFix.Trim and WHPerfFix.Trim.status() or nil
         local last = st and st.last or nil
-        log(string.format("cli t=%.0f grid=%d near=%d/3721 pos=%d,%d step=%d trim passes=%s lastRemoved=%s lastKept=%s",
+        local on, off = -1, -1
+        if WHPerfFix and WHPerfFix.clientStatus then on, off = WHPerfFix.clientStatus() end
+        local zn, zflag, zkeys = zombieFlags()
+        log(string.format("cli t=%.0f grid=%d near=%d/3721 pos=%d,%d step=%d trim passes=%s lastRemoved=%s lastKept=%s "
+            .. "whHandlers run=%d held=%d zombies=%d withWHmodData=%d modDataKeys=[%s]",
             (now - t0) / 1000, n, near, math.floor(p:getX()), math.floor(p:getY()), idx,
-            tostring(st and st.passes), tostring(last and last.removed), tostring(last and last.kept)))
+            tostring(st and st.passes), tostring(last and last.removed), tostring(last and last.kept), on, off, zn, zflag,
+            zkeys))
     end
     checkTeleport(p, now)
     if now < stepAt or idx > #steps then return end
@@ -172,7 +204,7 @@ Events.OnTick.Add(function()
         teleport(p, tp.x, tp.y)
     elseif cmd == "spawn" then
         sendClientCommand(p, "WanderingHordes", "ForceSpawn", {})
-    elseif cmd == "enc" or cmd == "sh" or cmd == "probe" or cmd == "spot" then
+    elseif cmd == "enc" or cmd == "sh" or cmd == "probe" or cmd == "spot" or cmd == "tpwh" then
         sendClientCommand(p, "WHTrimTest", cmd, { arg = arg })
     elseif cmd == "sb" then
         sandboxChange(p, arg)
@@ -183,6 +215,20 @@ Events.OnTick.Add(function()
         log("script done")
     end
     stepAt = now + 500
+end)
+
+-- tpwh: the server names where a Wandering Hordes zombie is; go there (to see it loaded on this client)
+Events.OnServerCommand.Add(function(module, command, args)
+    if module ~= "WHTrimTest" or command ~= "tpwh" then return end
+    local p = getPlayer()
+    if not p or not args or not args.x then
+        log("tpwh: no Wandering Hordes zombie on the server")
+        return
+    end
+    local x, y = math.floor(args.x) + 2, math.floor(args.y) + 2
+    log(string.format("tpwh: %d WH zombie(s) on the server, going to %d,%d", args.n or 0, x, y))
+    tp = { x = x, y = y, tries = 1, at = getTimestampMs() }
+    teleport(p, x, y)
 end)
 
 log("client helper loaded")

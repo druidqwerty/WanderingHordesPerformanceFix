@@ -1,6 +1,6 @@
-"""Poster / icon for Wandering Hordes Save Trim, in the style of the SmoothRide / ZombieSync / Tripping Zombies MP Fix
-art (dark grid, Bahnschrift, white + teal title, badges, teal glow line): the explored wall map as a trail of cells,
-kept bright around the base and the player, fading out everywhere else.
+"""Poster / icon for Wandering Hordes Performance Fix (was Save Trim), in the style of the SmoothRide / ZombieSync /
+Tripping Zombies MP Fix art (dark grid, Bahnschrift, white + teal title, badges, teal glow line): the explored wall
+map as a trail of cells, kept bright around the base and the player, fading out everywhere else.
 
   python -I make_art.py      writes mod/.../42/poster.png, 42/icon.png and docs/preview.png
 """
@@ -140,15 +140,16 @@ def poster(size=512):
     d = ImageDraw.Draw(im)
     f1 = fit(d, "WANDERING HORDES", int(52 * s), int(452 * s))
     d.text((int(30 * s), int(22 * s)), "WANDERING HORDES", font=f1, fill=WHITE)
-    f2 = fit(d, "SAVE TRIM", int(96 * s), int(452 * s))
+    title = "PERFORMANCE FIX"
+    f2 = fit(d, title, int(96 * s), int(452 * s))
     glow = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    ImageDraw.Draw(glow).text((int(28 * s), int(76 * s)), "SAVE TRIM", font=f2, fill=TEAL + (200,))
+    ImageDraw.Draw(glow).text((int(28 * s), int(84 * s)), title, font=f2, fill=TEAL + (200,))
     im.alpha_composite(glow.filter(ImageFilter.GaussianBlur(10 * s)))
     d = ImageDraw.Draw(im)
-    d.text((int(28 * s), int(76 * s)), "SAVE TRIM", font=f2, fill=TEAL)
+    d.text((int(28 * s), int(84 * s)), title, font=f2, fill=TEAL)
     # badges
     fb = font(int(24 * s), "SemiBold")
-    bx, by, bh = int(30 * s), int(190 * s), int(38 * s)
+    bx, by, bh = int(30 * s), int(176 * s), int(38 * s)
     d.rounded_rectangle([bx, by, bx + int(74 * s), by + bh], radius=int(7 * s), fill=TEAL)
     d.text((bx + int(13 * s), by + int(5 * s)), "LUA", font=fb, fill=(10, 30, 32))
     bx2 = bx + int(86 * s)
@@ -156,7 +157,7 @@ def poster(size=512):
                         width=max(1, int(2 * s)))
     d.text((bx2 + int(15 * s), by + int(5 * s)), "B42", font=fb, fill=(220, 226, 230))
     fs = font(int(20 * s), "SemiBold")
-    d.text((bx2 + int(96 * s), by + int(8 * s)), "SP + MP", font=fs, fill=(190, 200, 210))
+    d.text((bx2 + int(96 * s), by + int(8 * s)), "SERVER + CLIENTS", font=fs, fill=(190, 200, 210))
     # the map
     cell = max(4, int(12 * s))
     box = (int(16 * s), int(244 * s), int(496 * s), int(444 * s))
@@ -167,7 +168,7 @@ def poster(size=512):
     im.alpha_composite(layer)
     d = ImageDraw.Draw(im)
     fc = font(int(19 * s), "SemiBold")
-    cap = "NO MORE SAVE FREEZES"
+    cap = "NO SAVE FREEZES · NO CLIENT LAG"
     w = text_width(d, cap, fc, 3 * s)
     spaced(d, ((size - w) / 2, int(468 * s)), cap, fc, (190, 200, 210), 3 * s)
     return im.convert("RGB")
@@ -187,7 +188,7 @@ def icon(size=128):
 
 
 if __name__ == "__main__":
-    mod42 = os.path.join(PROJ, "mod", "WanderingHordesSaveTrim", "42")
+    mod42 = os.path.join(PROJ, "mod", "WanderingHordesPerformanceFix", "42")
     if not os.path.isdir(mod42):  # GitHub repo: 42/ at the root
         mod42 = os.path.join(PROJ, "42")
     docs = os.path.join(PROJ, "docs")

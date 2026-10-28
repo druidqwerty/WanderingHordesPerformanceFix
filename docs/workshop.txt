@@ -1,77 +1,71 @@
 version=1
 id=3829140377
-title=Wandering Hordes Save Trim [B42] - no more save freezes
-description=[h1]Wandering Hordes without a bloated save[/h1]
-description=An add-on for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3759920384]Wandering Hordes[/url]. Wandering Hordes remembers walls, fences and water for every tile any player has ever been near (a "passability grid" in global ModData) and never forgets any. The game writes all global ModData into global_mod_data.bin at every world save, on the server's main thread, and reads it all at every start.
+title=Wandering Hordes Performance Fix [B42] - no save freezes, no client lag
+description=[h1]Wandering Hordes without the lag[/h1]
+description=An add-on for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3759920384]Wandering Hordes[/url]: removes what it costs in performance where it does nothing useful, and keeps what it does exactly the same. Formerly [b]Wandering Hordes Save Trim[/b] (same item, new name and mod id).
 description=
-description=[url=https://boosty.to/lrgpp][img]https://raw.githubusercontent.com/druidqwerty/WanderingHordesSaveTrim/main/docs/banner.png[/img][/url]
+description=[url=https://boosty.to/lrgpp][img]https://raw.githubusercontent.com/druidqwerty/WanderingHordesPerformanceFix/main/docs/banner.png[/img][/url]
 description=Free and open source. The code is written by an AI; the direction, the testing and the time are mine. If the mod made your game better: [url=https://boosty.to/lrgpp]support on Boosty[/url].
 description=
-description=[h2]What goes wrong without it[/h2]
-description=On our two-player co-op save:
-description=[list]
-description=[*]The wall map was [b]58 MB of a 76 MB[/b] global_mod_data.bin, and it grows with every trip (a long drive leaves a 61-tile-wide trail).
-description=[*]Every world save (every 5 minutes) froze the server for ~0.3 s; the [b]first save after a start took 6.3 s[/b] and paused every player.
-description=[*]Loading it took [b]6.9 s[/b] of every server start, and over 400 MB of the server's memory.
-description=[/list]
+description=[h2]1. Clients run Wandering Hordes' server code for nothing[/h2]
+description=Build 42 loads a mod's server files on every client too. Hordes are spawned, steered and saved by the server only, and zombies reach a client without any Wandering Hordes data, so on every player's machine this work is thrown away: its wall scanners every frame (0.2-0.4 ms), its migration map at game start (a [b]0.6 s freeze when you join[/b]) and again once per game day (~6 ms in every 5th frame for ~8 s), its horde managers and a Lua call on every zombie update. The add-on lets only the server run it; hordes behave the same.
 description=
-description=[h2]What the add-on does[/h2]
-description=[list]
-description=[*]Every 2 minutes it walks over the map, a few hundred cells per tick, and forgets the parts farther than 400 tiles from every player, from where each player joined the game (usually the base, also while you are away on a trip), from where offline players were last seen, and from every safehouse.
-description=[*]Near the players nothing changes: 400 tiles covers everything Wandering Hordes' fence check can reach from a horde that appears near a player (75 + 300 tiles).
-description=[*]Far away Wandering Hordes simply scans the area again when somebody comes back, as in a place nobody has visited yet.
-description=[*]Works in single player and multiplayer. Wandering Hordes itself is not changed and none of its code is copied.
-description=[/list]
+description=[h2]2. Its wall map bloats the save[/h2]
+description=Wandering Hordes remembers walls and fences for every tile any player has ever been near and never forgets any. On our co-op save that was [b]58 MB of a 76 MB[/b] global_mod_data.bin, which the server writes at every world save and reads at every start. The add-on keeps that map only within 400 tiles of the players, of where each player joined (usually the base, also during a long trip), of offline players and of safehouses. That covers everything Wandering Hordes' fence check can reach near a player; far away it simply scans the area again when somebody comes back.
 description=
-description=[h2]Live test[/h2]
-description=Local dedicated server and client, Wandering Hordes [Core] + Vanilla+ preset, our real 76 MB global_mod_data.bin, a world save every minute, a tour base - 1.8 km - 3.4 km - base with forced hordes:
+description=[h2]Live tests[/h2]
+description=Local dedicated server + client, Wandering Hordes [Core] + Vanilla+ preset, vanilla zombies, forced hordes, teleports; every handler of Wandering Hordes timed on both sides.
 description=[table]
 description=[tr][th][/th][th]without the add-on[/th][th]with the add-on[/th][/tr]
-description=[tr][td]Wall map[/td][td]36,646 cells, 58 MB[/td][td]4,221 cells, 7 MB[/td][/tr]
-description=[tr][td]global_mod_data.bin[/td][td]76.1 MB[/td][td]25.0 MB[/td][/tr]
-description=[tr][td]Server freeze for ModData at each save[/td][td]0.33-0.43 s (once 2.0 s)[/td][td]0.10-0.17 s[/td][/tr]
-description=[tr][td]First save after a start (players paused)[/td][td]8.2 s[/td][td]0.55 s[/td][/tr]
+description=[tr][td]Client: Wandering Hordes' Lua every frame[/td][td]0.2-0.4 ms[/td][td]none[/td][/tr]
+description=[tr][td]Client: freeze when joining[/td][td]0.6 s[/td][td]none[/td][/tr]
+description=[tr][td]Client: once per game day[/td][td]~6 ms every 5th frame, ~8 s[/td][td]none[/td][/tr]
+description=[tr][td]Server: global_mod_data.bin (our save)[/td][td]76.1 MB[/td][td]25.0 MB[/td][/tr]
+description=[tr][td]Server: freeze at each world save[/td][td]0.33-0.43 s[/td][td]0.10-0.17 s[/td][/tr]
+description=[tr][td]Server: first save after a start (players paused)[/td][td]8.2 s[/td][td]0.53 s[/td][/tr]
 description=[/table]
 description=[list]
-description=[*]The first check of the old map: 9 s spread over 92 ticks, about 0.5 ms per tick. Later checks: about 1 s, under 1 ms per tick.
-description=[*]Wandering Hordes' own check for where a horde may appear gives the same answers around the base with and without the add-on, also after trips 1.8 km away with no safehouse. Hordes keep appearing as before. No Lua errors.
-description=[*]Offline bench with the game's own code: about 433 MB less Java heap after the trim.
+description=[*]The same horde zombies carry Wandering Hordes' data on the server (144 of 144) and nothing on the client.
+description=[*]Wandering Hordes' own check for where a horde may appear gives the same answers around the base with and without the add-on. Hordes keep appearing as before. No Lua errors.
+description=[*]Settings changed by an admin in the running game apply within seconds.
 description=[/list]
 description=
 description=[h2]Requirements and installation[/h2]
 description=[list]
 description=[*]Build 42.21+ and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3759920384]Wandering Hordes[/url] [Core]. No Java, no ZombieBuddy.
-description=[*]Multiplayer: on the server add [b]WanderingHordesSaveTrim[/b] to Mods= (after WanderingHordesCore) and [b]3829140377[/b] to WorkshopItems=. Players who join get it from the Workshop.
-description=[*]Can be added to an existing save: the first check trims the old map, the file shrinks at the next world save. Removing it later is safe.
+description=[*]Multiplayer: on the server add [b]WanderingHordesPerformanceFix[/b] to Mods= (after WanderingHordesCore) and [b]3829140377[/b] to WorkshopItems=. Players who join get it from the Workshop.
+description=[*]Had Wandering Hordes Save Trim? Replace WanderingHordesSaveTrim with WanderingHordesPerformanceFix in Mods=; the settings start from the defaults again, the remembered spots are taken over.
+description=[*]Can be added to an existing save and removed later.
 description=[/list]
 description=
 description=[h2]Settings[/h2]
-description=Host > Manage settings > Edit > Sandbox > [b]Wandering Hordes: Save Trim[/b], the same for everyone; an admin can change them in a running game (Admin > Sandbox options): [b]Trim Wandering Hordes' wall map[/b] (on), [b]Keep radius[/b] (400 tiles), [b]Keep around where players joined[/b] (on), [b]Keep around offline players[/b] (on), [b]Keep around safehouses[/b] (on), [b]Trim every[/b] (2 minutes), [b]Debug log[/b] (off).
+description=Host > Manage settings > Edit > Sandbox > [b]Wandering Hordes: Performance Fix[/b], the same for everyone; an admin can change them in a running game: [b]Clients skip Wandering Hordes' server work[/b] (on), [b]Trim Wandering Hordes' wall map[/b] (on), [b]Keep radius[/b] (400 tiles), [b]Keep around where players joined[/b], [b]offline players[/b], [b]safehouses[/b] (on), [b]Trim every[/b] (2 minutes), [b]Debug log[/b] (off).
 description=
 description=[h2]Is it working?[/h2]
-description=The server console has [noparse][WHSaveTrim] 1.0.0 loaded (server)[/noparse], and after the first check of an old save a line [noparse][WHSaveTrim] pass 1: ... removed (~48.4 MB) ...[/noparse].
+description=A client's console.txt has [noparse][WHPerfFix] multiplayer client: 10 of Wandering Hordes' server handlers held back[/noparse]; the server console has [noparse][WHPerfFix] 2.0.0 loaded (server)[/noparse] and, on an old save, [noparse][WHPerfFix] pass 1: ... removed (~48.4 MB) ...[/noparse].
 description=
 description=[h2]Known limitations[/h2]
 description=[list]
-description=[*]A trimmed place is like a new one for Wandering Hordes: it scans 30 tiles around the player at once and the rest as you walk around; until then a horde may appear inside a large fenced area it does not know yet. Your base is kept; make other important fenced places a safehouse or raise the radius.
-description=[*]Only Wandering Hordes' table is touched; other mods' data in global_mod_data.bin stays.
+description=[*]The server still does all of Wandering Hordes' own work (scanners, managers, its migration map); that is what makes it work.
+description=[*]A trimmed place is like a new one for Wandering Hordes: until it scans it again, a horde may appear inside a large fenced area it does not know yet. Your base is kept; make other important fenced places a safehouse or raise the radius.
 description=[/list]
 description=
-description=Version 1.0.0. Source code (MIT): [url=https://github.com/druidqwerty/WanderingHordesSaveTrim]github.com/druidqwerty/WanderingHordesSaveTrim[/url]. Wandering Hordes is by SpaceGamer_R.
+description=Version 2.0.0. Source code (MIT): [url=https://github.com/druidqwerty/WanderingHordesPerformanceFix]github.com/druidqwerty/WanderingHordesPerformanceFix[/url]. Wandering Hordes is by SpaceGamer_R.
 description=
 description=[h2]My mods[/h2]
 description=[list]
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3827367565]SmoothRide MP[/url] - smooth multiplayer vehicles.
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115]ZombieSync MP[/url] - smooth multiplayer zombies.
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899]Tripping Zombies MP Fix[/url] - the same Tripping Zombies trips for every player.
-description=[*][b]Wandering Hordes Save Trim[/b] - no more save freezes from Wandering Hordes' wall map (this mod).
+description=[*][b]Wandering Hordes Performance Fix[/b] - no save freezes and no client lag from Wandering Hordes (this mod).
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351]Download Unstuck[/url] - un-sticks and speeds up the Workshop download when hosting from the menu.
 description=[/list]
 description=
 description=[h2]Please note[/h2]
 description=[list]
 description=[*]The code is written by an AI, not by a human.
 description=[*]It was made for playing with a friend.
-description=[*]Tested on a local dedicated server with a copy of our real save data; a session with a friend is still to come.
+description=[*]Tested on a local dedicated server and client with a copy of our real save data; a session with a friend is still to come.
 description=[/list]
 tags=Build 42;Multiplayer;Misc
 visibility=public

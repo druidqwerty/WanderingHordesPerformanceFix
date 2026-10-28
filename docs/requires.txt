@@ -1,0 +1,1 @@
+3759920384  # Wandering Hordes (mod.info require=\WanderingHordesCore)

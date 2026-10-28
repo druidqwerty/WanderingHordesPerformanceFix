@@ -1,5 +1,7 @@
 --*****************************************************************************
--- Wandering Hordes Save Trim (WanderingHordesSaveTrim) - add-on for Wandering Hordes [Core], Build 42.
+-- Wandering Hordes Performance Fix (WanderingHordesPerformanceFix) - add-on for Wandering Hordes [Core], B42.
+-- Server part: the wall-map trim (was the add-on "Wandering Hordes Save Trim" 1.0.0). The multiplayer-client
+-- part is in shared/WanderingHordesPerformanceFix/WHPerfFix_Shared.lua.
 --
 -- The problem (B42.21, read from the game and WH code, measured on a real co-op save):
 --  * Wandering Hordes keeps a wall map ("passability grid") in the global ModData table
@@ -24,23 +26,25 @@
 --  * Near the players nothing changes: the default radius (400) covers every square WH's fence check can
 --    reach from a horde that appears near a player (75 + 300 tiles). Far away, WH forgets its wall map;
 --    when a player comes back there, WH scans the area again (as in a never-visited area).
---  * Runs wherever WH's scanners run: the server (or single player) - this is what the save contains -
---    and each multiplayer client, which keeps its own copy in memory (B42 loads media/lua/server on
---    clients too); clients never save it, there it only saves memory.
+--  * Runs wherever WH's scanners run: the server (or single player) - this is what the save contains - and
+--    a multiplayer client where the shared part lets WH's server handlers run (ClientOffload=false; B42
+--    loads media/lua/server on clients too): clients never save it, there it only saves memory.
 --  * Nothing is removed when there is nobody to keep around (no player online and nothing remembered).
--- Settings: Sandbox page "Wandering Hordes Save Trim" (Enabled, KeepRadius, KeepJoinSpots,
--- KeepOfflinePlayers, KeepSafehouses, IntervalMinutes, Log); read live, so an admin change applies in the
--- running game.
+-- Settings: Sandbox page "Wandering Hordes: Performance Fix" (TrimWallMap, KeepRadius, KeepJoinSpots,
+-- KeepOfflinePlayers, KeepSafehouses, TrimIntervalMinutes, Log); read live, so an admin change applies in
+-- the running game.
 --*****************************************************************************
 
-if WHSaveTrim and WHSaveTrim.loaded then return end
-WHSaveTrim = WHSaveTrim or {}
-local M = WHSaveTrim
+WHPerfFix = WHPerfFix or {}
+if WHPerfFix.Trim and WHPerfFix.Trim.loaded then return end
+WHPerfFix.Trim = WHPerfFix.Trim or {}
+local M = WHPerfFix.Trim
 M.loaded = true
-M.VERSION = "1.0.0"
+M.VERSION = WHPerfFix.VERSION or "2.0.0"
 
 local GRID = "WH_PassabilityGrid_v2"   -- Wandering Hordes' table (WH_Server.lua getGridAndTileKeys)
-local OWN = "WHSaveTrim"                -- our own small table: where players were last seen (server only)
+local OWN = "WHPerfFix"                 -- our own small table: where players were last seen (server only)
+local OLD_OWN = "WHSaveTrim"            -- the same table of the add-on's 1.0.0 (Wandering Hordes Save Trim)
 local BUCKET = 10                       -- WH bucket = 10x10 tiles, key = gx * 100000 + gy
 local KEY_MUL = 100000
 local BUDGET = 400                      -- buckets checked per tick (measured: see MODLOG)
@@ -53,7 +57,7 @@ local BYTES_PER_BUCKET = 14             -- serialized: key 9 + type 1 + count 4
 local BYTES_PER_TILE = 18               -- serialized: key 9 + value 9
 
 --=============================================================================
--- settings (Sandbox page WHSaveTrim; read every tick / pass, so admin changes apply at once)
+-- settings (Sandbox page WHPerfFix; read every tick / pass, so admin changes apply at once)
 --=============================================================================
 local function clamp(v, lo, hi, def)
     v = tonumber(v)
@@ -65,21 +69,21 @@ local function clamp(v, lo, hi, def)
 end
 
 local function readSettings()
-    local v = SandboxVars and SandboxVars.WHSaveTrim or nil
+    local v = SandboxVars and SandboxVars.WHPerfFix or nil
     if type(v) ~= "table" then v = {} end
     return {
-        enabled = v.Enabled ~= false,
+        enabled = v.TrimWallMap ~= false,
         radius = clamp(v.KeepRadius, 100, 5000, 400),
         joinSpots = v.KeepJoinSpots ~= false,
         offline = v.KeepOfflinePlayers ~= false,
         safehouses = v.KeepSafehouses ~= false,
-        intervalMs = clamp(v.IntervalMinutes, 1, 60, 2) * 60000,
+        intervalMs = clamp(v.TrimIntervalMinutes, 1, 60, 2) * 60000,
         log = v.Log == true,
     }
 end
 
 local function log(msg)
-    print("[WHSaveTrim] " .. msg)
+    print("[WHPerfFix] " .. msg)
 end
 
 local SIDE = nil
@@ -164,10 +168,32 @@ end
 -- server: where each player was last seen (kept while he is offline) and where he joined the game
 -- (kept while he is away), saved with the world; single player / client: where each local player was
 -- first seen in this session (the game is loaded where it was left, usually the base)
+local migrated = false
+
 local function ownData()
     local t = ModData.getOrCreate(OWN)
     if type(t.spots) ~= "table" then t.spots = {} end
     if type(t.homes) ~= "table" then t.homes = {} end
+    if not migrated then
+        migrated = true
+        -- a save that ran the add-on's 1.0.0 (Wandering Hordes Save Trim): take its spots over, once
+        local old = ModData.get(OLD_OWN)
+        if type(old) == "table" then
+            local n = 0
+            for _, key in ipairs({ "spots", "homes" }) do
+                if type(old[key]) == "table" then
+                    for name, s in pairs(old[key]) do
+                        if t[key][name] == nil and type(s) == "table" then
+                            t[key][name] = { x = s.x, y = s.y, t = s.t }
+                            n = n + 1
+                        end
+                    end
+                end
+            end
+            ModData.remove(OLD_OWN)
+            log("took over " .. n .. " player spot(s) from Wandering Hordes Save Trim 1.0.0")
+        end
+    end
     return t
 end
 
@@ -395,8 +421,8 @@ local function finishPass(p, now, why)
 end
 
 local function enabledNow()
-    local v = SandboxVars and SandboxVars.WHSaveTrim or nil
-    return not (type(v) == "table" and v.Enabled == false)
+    local v = SandboxVars and SandboxVars.WHPerfFix or nil
+    return not (type(v) == "table" and v.TrimWallMap == false)
 end
 
 local lastTrack = nil

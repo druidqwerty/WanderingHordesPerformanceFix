@@ -1,6 +1,6 @@
-name=WH Save Trim live-test helper (test only)
+name=WH Performance Fix live-test helper (test only)
 id=WHTrimTest
 author=druid
-description=Test-only helper for the Wandering Hordes Save Trim live tests. Never publish.
+description=Test-only helper for the Wandering Hordes Performance Fix live tests. Never publish.
 versionMin=42.21
 modversion=1.0.0

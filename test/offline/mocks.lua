@@ -1,8 +1,9 @@
--- Offline test bench for WHSaveTrim.lua: a mocked game API (only what the add-on uses), run in the
--- game's own Kahlua VM by tools/LuaRun (see tools/offline_test.sh). Not part of the mod.
+-- Offline test bench for the add-on (WHPerfFix_Shared.lua + WHPerfFix_Trim.lua): a mocked game API (only what
+-- the add-on uses), run in the game's own Kahlua VM by tools/LuaRun (see tools/offline_test.sh). Not part of
+-- the mod.
 
 T = { passed = 0, failed = 0, clock = 1000000, side = "server", players = {}, local_players = {},
-      houses = {}, gmd = {}, handlers = {}, printed = {} }
+      houses = {}, gmd = {}, handlers = {}, printed = {}, files = {}, ev = {} }
 
 local realPrint = print
 print = function(s)
@@ -65,23 +66,75 @@ ModData = {
     exists = function(tag) return T.gmd[tag] ~= nil end,
 }
 
-Events = { OnTick = { Add = function(f) T.handlers[#T.handlers + 1] = f end } }
+-- Events.<E>.Add / Remove like the game's (a list per event, Remove takes out the first equal closure)
+local EVENT_NAMES = { "OnTick", "OnZombieUpdate", "OnZombieDead", "EveryOneMinute", "EveryTenMinutes", "OnGameStart",
+    "OnServerStarted", "OnClientCommand", "OnServerCommand", "OnFillWorldObjectContextMenu" }
+function T.newEvents()
+    T.ev = {}
+    Events = {}
+    for _, name in ipairs(EVENT_NAMES) do
+        local list = {}
+        T.ev[name] = list
+        Events[name] = {
+            Add = function(f) list[#list + 1] = f end,
+            Remove = function(f)
+                for i = 1, #list do
+                    if list[i] == f then table.remove(list, i) return end
+                end
+            end,
+        }
+    end
+    T.handlers = T.ev.OnTick
+end
+T.newEvents()
 
-SandboxVars = { WHSaveTrim = {} }
+-- where a closure comes from (the game: the Lua file that defined it)
+function getFilenameOfClosure(f) return T.files[f] end
+function T.fn(file, body)
+    local f = body or function() end
+    T.files[f] = file
+    return f
+end
+
+function T.fire(name, ...)
+    local list = T.ev[name]
+    local i = 1
+    while i <= #list do
+        list[i](...)
+        i = i + 1
+    end
+end
+
+function T.listed(name, f)
+    for _, g in ipairs(T.ev[name]) do
+        if g == f then return true end
+    end
+    return false
+end
+
+SandboxVars = { WHPerfFix = {} }
 
 -- run n ticks, dt ms apart
+-- like the game's Event.trigger: an index loop that re-reads the size (a handler may add or remove handlers)
 function T.tick(n, dt)
     for _ = 1, n or 1 do
         T.clock = T.clock + (dt or 100)
-        for i = 1, #T.handlers do T.handlers[i]() end
+        local list = T.ev.OnTick
+        local i = 1
+        while i <= #list do
+            list[i]()
+            i = i + 1
+        end
     end
 end
 
 function T.reset(side)
-    WHSaveTrim = nil
+    WHPerfFix = nil
+    WanderingHordes = nil
     T.side = side
-    T.players, T.local_players, T.houses, T.gmd, T.handlers, T.printed = {}, {}, {}, {}, {}, {}
-    SandboxVars = { WHSaveTrim = {} }
+    T.players, T.local_players, T.houses, T.gmd, T.printed, T.files = {}, {}, {}, {}, {}, {}
+    T.newEvents()
+    SandboxVars = { WHPerfFix = {} }
 end
 
 -- WH's own key formulas (WH_Server.lua getGridAndTileKeys)
@@ -123,10 +176,10 @@ end
 
 -- run ticks until the add-on reports a finished pass (or max ticks)
 function T.untilPass(maxTicks, dt)
-    local before = WHSaveTrim.status().passes
+    local before = WHPerfFix.Trim.status().passes
     for _ = 1, maxTicks or 10000 do
         T.tick(1, dt)
-        if WHSaveTrim.status().passes > before then return true end
+        if WHPerfFix.Trim.status().passes > before then return true end
     end
     return false
 end

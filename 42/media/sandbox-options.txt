@@ -1,61 +1,69 @@
 VERSION = 1,
 
-option WHSaveTrim.Enabled
+option WHPerfFix.ClientOffload
 {
     type = boolean,
     default = true,
-    page = WHSaveTrim,
-    translation = WHSaveTrim_Enabled,
+    page = WHPerfFix,
+    translation = WHPerfFix_ClientOffload,
 }
 
-option WHSaveTrim.KeepRadius
+option WHPerfFix.TrimWallMap
+{
+    type = boolean,
+    default = true,
+    page = WHPerfFix,
+    translation = WHPerfFix_TrimWallMap,
+}
+
+option WHPerfFix.KeepRadius
 {
     type = integer,
     min = 100,
     max = 5000,
     default = 400,
-    page = WHSaveTrim,
-    translation = WHSaveTrim_KeepRadius,
+    page = WHPerfFix,
+    translation = WHPerfFix_KeepRadius,
 }
 
-option WHSaveTrim.KeepJoinSpots
+option WHPerfFix.KeepJoinSpots
 {
     type = boolean,
     default = true,
-    page = WHSaveTrim,
-    translation = WHSaveTrim_KeepJoinSpots,
+    page = WHPerfFix,
+    translation = WHPerfFix_KeepJoinSpots,
 }
 
-option WHSaveTrim.KeepOfflinePlayers
+option WHPerfFix.KeepOfflinePlayers
 {
     type = boolean,
     default = true,
-    page = WHSaveTrim,
-    translation = WHSaveTrim_KeepOfflinePlayers,
+    page = WHPerfFix,
+    translation = WHPerfFix_KeepOfflinePlayers,
 }
 
-option WHSaveTrim.KeepSafehouses
+option WHPerfFix.KeepSafehouses
 {
     type = boolean,
     default = true,
-    page = WHSaveTrim,
-    translation = WHSaveTrim_KeepSafehouses,
+    page = WHPerfFix,
+    translation = WHPerfFix_KeepSafehouses,
 }
 
-option WHSaveTrim.IntervalMinutes
+option WHPerfFix.TrimIntervalMinutes
 {
     type = integer,
     min = 1,
     max = 60,
     default = 2,
-    page = WHSaveTrim,
-    translation = WHSaveTrim_IntervalMinutes,
+    page = WHPerfFix,
+    translation = WHPerfFix_TrimIntervalMinutes,
 }
 
-option WHSaveTrim.Log
+option WHPerfFix.Log
 {
     type = boolean,
     default = false,
-    page = WHSaveTrim,
-    translation = WHSaveTrim_Log,
+    page = WHPerfFix,
+    translation = WHPerfFix_Log,
 }

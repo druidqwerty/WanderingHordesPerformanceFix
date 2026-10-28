@@ -1,8 +1,11 @@
-"""Wandering Hordes Save Trim live test: a local dedicated server + one client (no Steam), Wandering Hordes
+"""Wandering Hordes Performance Fix live test: a local dedicated server + one client (no Steam), Wandering Hordes
 [Core] + Vanilla+ preset (the user's PRALIFE settings) + the add-on + the test helper (test/WHTrimTest).
 
   python -I whlive.py start NAME [--addon on|off|none] [--sandbox "Key=V,..."] [--world WORLD] [--gmd FILE]
                                  [--script "wait:20;enc;tp:X,Y;..."] [--save-every MIN] [--addon-dir DIR]
+                                 [--probe] [--pop X]
+      --addon off: installed with both parts switched off (TrimWallMap=false, ClientOffload=false);
+      --probe: the timing probe (test/WHPerfProbe); --pop X: vanilla zombie population x X (default: none)
       prepares env/ (own cache dirs; the user's Zomboid folder is never touched), copies the saved test world
       WORLD (env/worlds/WORLD; default: a fresh world), puts FILE in as global_mod_data.bin, starts the
       server, then the client (which runs the script), and returns
@@ -46,11 +49,12 @@ PIDS = os.path.join(ENV, "pids.json")
 STATE = os.path.join(ENV, "run.json")
 
 
-def mods(addon, addon_dir=None):
-    m = {"WanderingHordesCore": os.path.join(WS, "WanderingHordes_Core"),
-         "WanderingHordesVanillaPlus": os.path.join(WS, "WanderingHordesVanillaPlus")}
+def mods(addon, addon_dir=None, probe=False):
+    m = {"WHPerfProbe": os.path.join(PROJ, "test", "WHPerfProbe")} if probe else {}
+    m.update({"WanderingHordesCore": os.path.join(WS, "WanderingHordes_Core"),
+              "WanderingHordesVanillaPlus": os.path.join(WS, "WanderingHordesVanillaPlus")})
     if addon != "none":
-        m["WanderingHordesSaveTrim"] = addon_dir or os.path.join(PROJ, "mod", "WanderingHordesSaveTrim")
+        m["WanderingHordesPerformanceFix"] = addon_dir or os.path.join(PROJ, "mod", "WanderingHordesPerformanceFix")
     m["WHTrimTest"] = os.path.join(PROJ, "test", "WHTrimTest")
     return m
 
@@ -104,7 +108,7 @@ def prepare(a):
         if os.path.isfile(os.path.join(SRV, f)):
             os.remove(os.path.join(SRV, f))
     os.makedirs(SRV, exist_ok=True)
-    mm = mods(a["addon"], a.get("addon_dir"))
+    mm = mods(a["addon"], a.get("addon_dir"), a.get("probe"))
     copy_mods(SRV, mm)
     write(os.path.join(SRV, "Server", NAME + ".ini"), "\n".join([
         "Mods=" + ";".join(mm), "WorkshopItems=", "Map=Muldraugh, KY", "Public=false", "Open=true", "PVP=false",
@@ -117,14 +121,17 @@ def prepare(a):
     if a["addon"] != "none":
         items = [kv.split("=", 1) for kv in (a.get("sandbox") or "").split(",") if "=" in kv]
         if a["addon"] == "off":
-            items = [i for i in items if i[0].strip() != "Enabled"] + [["Enabled", "false"]]
-        trim = "    WHSaveTrim = {\n" + "".join(f"        {k.strip()} = {v.strip()},\n" for k, v in items) + "    },\n"
+            items = [i for i in items if i[0].strip() not in ("TrimWallMap", "ClientOffload")] + \
+                [["TrimWallMap", "false"], ["ClientOffload", "false"]]
+        trim = "    WHPerfFix = {\n" + "".join(f"        {k.strip()} = {v.strip()},\n" for k, v in items) + "    },\n"
     wh = open(os.path.join(HERE, "wh_sandbox_pralife.lua"), encoding="utf-8").read().rstrip() + "\n"
-    # no natural population (only Wandering Hordes' hordes); day length 1 h like a busy test
+    # default: no natural population (only Wandering Hordes' hordes), --pop X: vanilla population x X;
+    # day length 1 h like a busy test
+    pop = float(a.get("pop") or 0.0)
     write(os.path.join(SRV, "Server", NAME + "_SandboxVars.lua"),
           "SandboxVars = {\n    VERSION = 6,\n    Zombies = 4,\n    DayLength = 3,\n    StartTime = 2,\n"
-          "    ZombieConfig = {\n        PopulationMultiplier = 0.0,\n        PopulationStartMultiplier = 0.0,\n"
-          "        PopulationPeakMultiplier = 0.0,\n    },\n" + wh + trim + "}\n")
+          f"    ZombieConfig = {{\n        PopulationMultiplier = {pop},\n        PopulationStartMultiplier = {pop},\n"
+          f"        PopulationPeakMultiplier = {pop * 1.5},\n    }},\n" + wh + trim + "}\n")
     write(os.path.join(SRV, "Server", NAME + "_spawnregions.lua"),
           'function SpawnRegions()\n\treturn {\n\t\t{ name = "Muldraugh, KY", file = "media/maps/Muldraugh, KY/spawnpoints.lua" },\n\t}\nend\n')
     if a.get("world"):
@@ -264,7 +271,7 @@ def launch():
     return pids
 
 
-FOLLOW = re.compile(r"\[WHTrimTest\] (?!srv near)|\[WHSaveTrim\]|WANDERING HORDES LOG|Saving took|Saving GlobalModData|"
+FOLLOW = re.compile(r"\[WHTrimTest\] (?!srv near)|\[WHPerfFix\]|\[WHPerfProbe\] (?!first handler)|WANDERING HORDES LOG|Saving took|Saving GlobalModData|"
                     r"Pausing clients|GlobalModData.init|SERVER STARTED|[Kk]icked|ERROR|Exception|STACK TRACE")
 
 
@@ -451,8 +458,8 @@ def analyze(res=None):
         out.append(f"  save at +{rel:6.0f} s: GlobalModData {gm:7.0f} ms, whole save {took if took else 0:7.0f} ms"
                    + (" (clients paused)" if paused else ""))
     for ln in lines:
-        if "[WHSaveTrim]" in ln:
-            out.append("  " + ln[ln.index("[WHSaveTrim]"):][:300])
+        if "[WHPerfFix]" in ln:
+            out.append("  " + ln[ln.index("[WHPerfFix]"):][:300])
     errs = [ln for ln in lines if LUAERR.search(ln) and not NOISE.search(ln)]
     out.append(f"server error lines: {len(errs)}")
     out += ["  " + e[:250] for e in errs[:12]]
@@ -485,7 +492,7 @@ def main():
                 os.remove(f)
         a = {"name": args[0], "addon": opt("--addon", "on"), "sandbox": opt("--sandbox", ""), "world": opt("--world"),
              "gmd": opt("--gmd"), "script": opt("--script"), "save_every": int(opt("--save-every", "1")),
-             "addon_dir": opt("--addon-dir")}
+             "addon_dir": opt("--addon-dir"), "probe": "--probe" in args, "pop": opt("--pop", "0")}
         prepare(a)
         if launch() is None:
             kill()

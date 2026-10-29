@@ -215,6 +215,7 @@ Hordes замерялась на обеих сторонах тестовым п
 - [Tripping Zombies MP Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899) — одинаковые падения Tripping Zombies у всех игроков.
 - **Wandering Hordes Performance Fix** — без подвисаний сохранения и лагов клиента из-за Wandering Hordes (этот мод).
 - [Download Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — лечит зависание загрузки мастерской при запуске своего сервера.
+- [A-Life: Reactive Survivors](https://steamcommunity.com/sharedfiles/filedetails/?id=3829332775) — NPC из A-Life отбиваются до укуса (тестовая версия).
 
 ## Авторы и лицензия
 

@@ -58,7 +58,7 @@ description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=38273
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115]ZombieSync MP[/url] - smooth multiplayer zombies.
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899]Tripping Zombies MP Fix[/url] - the same Tripping Zombies trips for every player.
 description=[*][b]Wandering Hordes Performance Fix[/b] - no save freezes and no client lag from Wandering Hordes (this mod).
-description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351]Download Unstuck[/url] - un-sticks and speeds up the Workshop download when hosting from the menu.
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351]Download Unstuck[/url] - un-sticks the Workshop download when hosting from the menu.
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829332775]A-Life: Reactive Survivors[/url] - A-Life NPCs fight back before the bite (test version).
 description=[/list]
 description=

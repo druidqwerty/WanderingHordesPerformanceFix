@@ -32,7 +32,7 @@ description=[*]Стоял Save Trim? Замените WanderingHordesSaveTrim н
 description=[/list]
 description=
 description=[h2]Настройки[/h2]
-description=Песочница > [b]Wandering Hordes: Performance Fix[/b], общие для всех, меняются и в идущей игре: клиенты не выполняют серверную работу (вкл.), обрезать карту стен (вкл.), радиус 400 клеток, хранить вокруг мест входа, офлайн-игроков, убежищ (вкл.), проверять каждые 2 минуты, отладочный лог.
+description=Свой сервер > Настройка > Редактировать > Sandbox > [b]Wandering Hordes: Performance Fix[/b], общие для всех, админ меняет их и в идущей игре (Админ-панель > Настройки песочницы): клиенты не выполняют серверную работу (вкл.), обрезать карту стен (вкл.), радиус 400 клеток, хранить вокруг мест входа, офлайн-игроков, убежищ (вкл.), проверять каждые 2 минуты, отладочный лог.
 description=
 description=[h2]Работает ли?[/h2]
 description=В console.txt клиента: [noparse][WHPerfFix] multiplayer client: 10 of Wandering Hordes' server handlers held back[/noparse]; на сервере: [noparse][WHPerfFix] 2.0.0 loaded (server)[/noparse].
@@ -51,7 +51,7 @@ description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=38273
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115]ZombieSync MP[/url] — плавные зомби в мультиплеере.
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899]Tripping Zombies MP Fix[/url] — одинаковые падения Tripping Zombies у всех игроков.
 description=[*][b]Wandering Hordes Performance Fix[/b] — без подвисаний сохранения и лагов клиента (этот мод).
-description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351]Download Unstuck[/url] — лечит и ускоряет загрузку мастерской при запуске своего сервера.
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351]Download Unstuck[/url] — лечит зависание загрузки мастерской при запуске своего сервера.
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3829332775]A-Life: Reactive Survivors[/url] — NPC из A-Life отбиваются до укуса (тестовая версия).
 description=[/list]
 description=

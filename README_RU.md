@@ -214,7 +214,7 @@ Hordes замерялась на обеих сторонах тестовым п
 - [ZombieSync MP](https://steamcommunity.com/sharedfiles/filedetails/?id=3827946115) — плавные зомби в мультиплеере.
 - [Tripping Zombies MP Fix](https://steamcommunity.com/sharedfiles/filedetails/?id=3829034899) — одинаковые падения Tripping Zombies у всех игроков.
 - **Wandering Hordes Performance Fix** — без подвисаний сохранения и лагов клиента из-за Wandering Hordes (этот мод).
-- [Download Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — лечит и ускоряет загрузку мастерской при запуске своего сервера.
+- [Download Unstuck](https://steamcommunity.com/sharedfiles/filedetails/?id=3829163351) — лечит зависание загрузки мастерской при запуске своего сервера.
 
 ## Авторы и лицензия
 

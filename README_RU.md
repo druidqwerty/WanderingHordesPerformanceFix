@@ -9,7 +9,7 @@
 
 **Steam Workshop:** https://steamcommunity.com/sharedfiles/filedetails/?id=3829140377 · **Исходный код (MIT):** https://github.com/druidqwerty/WanderingHordesPerformanceFix
 
-<p align="center"><a href="https://boosty.to/lrgpp"><img src="docs/banner.png" alt="Моды LrgPP на Boosty" width="640"></a></p>
+<p align="center"><a href="https://boosty.to/lrgpp"><img src="https://raw.githubusercontent.com/druidqwerty/WanderingHordesPerformanceFix/5c6de362958ace77bb473adec1a10a988df2cd98/docs/banner.png" alt="Моды LrgPP на Boosty" width="640"></a></p>
 
 Бесплатно и с открытым кодом. Код пишет ИИ; идея, тесты и время — мои. Если мод сделал вашу игру лучше: [поддержать на Boosty](https://boosty.to/lrgpp).
 

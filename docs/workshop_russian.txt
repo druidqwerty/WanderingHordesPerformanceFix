@@ -2,7 +2,7 @@ title=Wandering Hordes Performance Fix [B42] — без подвисаний с�
 description=[h1]Wandering Hordes без лагов[/h1]
 description=Дополнение к [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3759920384]Wandering Hordes[/url]: убирает его нагрузку там, где она ничего не даёт; поведение орд не меняется. Раньше назывался [b]Wandering Hordes Save Trim[/b] (тот же предмет, новые имя и id мода).
 description=
-description=[url=https://boosty.to/lrgpp][img]https://raw.githubusercontent.com/druidqwerty/WanderingHordesPerformanceFix/main/docs/banner.png[/img][/url]
+description=[url=https://boosty.to/lrgpp][img]https://raw.githubusercontent.com/druidqwerty/WanderingHordesPerformanceFix/5c6de362958ace77bb473adec1a10a988df2cd98/docs/banner.png[/img][/url]
 description=Бесплатно и с открытым кодом. Код пишет ИИ; идея, тесты и время — мои. Если мод сделал вашу игру лучше: [url=https://boosty.to/lrgpp]поддержать на Boosty[/url].
 description=
 description=[h2]1. Клиенты впустую выполняют серверный код Wandering Hordes[/h2]

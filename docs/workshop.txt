@@ -4,7 +4,7 @@ title=Wandering Hordes Performance Fix [B42] - no save freezes, no client lag
 description=[h1]Wandering Hordes without the lag[/h1]
 description=An add-on for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3759920384]Wandering Hordes[/url]: removes what it costs in performance where it does nothing useful, and keeps what it does exactly the same. Formerly [b]Wandering Hordes Save Trim[/b] (same item, new name and mod id).
 description=
-description=[url=https://boosty.to/lrgpp][img]https://raw.githubusercontent.com/druidqwerty/WanderingHordesPerformanceFix/main/docs/banner.png[/img][/url]
+description=[url=https://boosty.to/lrgpp][img]https://raw.githubusercontent.com/druidqwerty/WanderingHordesPerformanceFix/5c6de362958ace77bb473adec1a10a988df2cd98/docs/banner.png[/img][/url]
 description=Free and open source. The code is written by an AI; the direction, the testing and the time are mine. If the mod made your game better: [url=https://boosty.to/lrgpp]support on Boosty[/url].
 description=
 description=[h2]1. Clients run Wandering Hordes' server code for nothing[/h2]

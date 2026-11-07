@@ -9,7 +9,7 @@ Formerly **Wandering Hordes Save Trim** (1.0.0): same Workshop item, new name an
 
 **Steam Workshop:** https://steamcommunity.com/sharedfiles/filedetails/?id=3829140377 · **Source code (MIT):** https://github.com/druidqwerty/WanderingHordesPerformanceFix
 
-<p align="center"><a href="https://boosty.to/lrgpp"><img src="docs/banner.png" alt="LrgPP mods on Boosty" width="640"></a></p>
+<p align="center"><a href="https://boosty.to/lrgpp"><img src="https://raw.githubusercontent.com/druidqwerty/WanderingHordesPerformanceFix/5c6de362958ace77bb473adec1a10a988df2cd98/docs/banner.png" alt="LrgPP mods on Boosty" width="640"></a></p>
 
 Free and open source. The code is written by an AI; the direction, the testing and the time are mine. If the mod made your game better: [support on Boosty](https://boosty.to/lrgpp).
 

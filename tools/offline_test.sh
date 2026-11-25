@@ -32,4 +32,6 @@ cd "$GAME"
   "$T/reset_offload_server.lua" "$SHARED" "$T/wh_fake_server.lua" "$T/tests_offload_server.lua" \
   "$T/reset_offload_sp.lua" "$SHARED" "$T/wh_fake_server.lua" "$T/tests_offload_server.lua" \
   "$T/reset_offload_sp.lua" "$SHARED" "$T/wh_fake_server.lua" "$T/tests_offload_late.lua" \
+  "$T/reset_offload_client.lua" "$SHARED" "$T/wh_fake_server.lua" "$T/tests_offload_false.lua" \
+  "$T/reset_offload_client_false.lua" "$SHARED" "$T/wh_fake_server.lua" "$T/tests_offload_join_false.lua" \
   "$T/summary.lua"

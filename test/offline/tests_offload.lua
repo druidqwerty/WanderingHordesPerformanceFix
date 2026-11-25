@@ -3,8 +3,8 @@
 -- handlers touched. Run after reset_offload_client + the shared file + wh_fake_server.lua.
 T.say("-- multiplayer client: Wandering Hordes' server handlers")
 local M = WHPerfFix
-check(M and M.sharedLoaded and M.VERSION == "2.0.0", "shared part loaded, version")
-check(T.logged("2.0.0 shared part loaded") ~= nil, "shared load line")
+check(M and M.sharedLoaded and M.VERSION == "2.0.1", "shared part loaded, version")
+check(T.logged("2.0.1 shared part loaded") ~= nil, "shared load line")
 check(#M.handlers == T.wh.count, "all " .. T.wh.count .. " of WH_Server.lua's handlers recognized (got " .. #M.handlers .. ")")
 check(T.whListed() == 0, "none of them registered on a multiplayer client")
 check(T.otherListed() == #T.other + 1, "every other handler registered (other files, look-alike names, no file)")

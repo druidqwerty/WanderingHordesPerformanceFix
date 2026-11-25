@@ -1,7 +1,7 @@
 -- multiplayer client: WH's scanners fill the client's own in-memory copy around the local player;
 -- the add-on trims it around the local players only, and never touches getOnlinePlayers or its own table
 T.say("-- client")
-check(T.logged("2.0.0 loaded %(client%)") ~= nil, "load line names the side")
+check(T.logged("2.0.1 loaded %(client%)") ~= nil, "load line names the side")
 local g = T.fill(0, 0, 1999, 1999, 3)
 T.local_players = { T.player("me", 500, 500) }
 T.tick(100, 100)        -- 10 s: first pass waits 15 s

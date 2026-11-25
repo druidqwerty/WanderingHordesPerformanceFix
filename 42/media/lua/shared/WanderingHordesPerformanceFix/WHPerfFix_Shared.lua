@@ -18,7 +18,7 @@ WHPerfFix = WHPerfFix or {}
 local M = WHPerfFix
 if M.sharedLoaded then return end
 M.sharedLoaded = true
-M.VERSION = "2.0.0"
+M.VERSION = "2.0.1"
 
 local function log(msg)
     print("[WHPerfFix] " .. msg)
@@ -38,7 +38,7 @@ function M.isMPClient()
     return c
 end
 
-local WH_SERVER_FILE = "/media/lua/server/WH_Server.lua"
+local WH_SERVER_FILE = "/media/lua/server/wh_server.lua"
 local EVENTS = { "OnTick", "OnZombieUpdate", "OnZombieDead", "EveryOneMinute", "EveryTenMinutes", "EveryHours",
     "EveryDays", "OnGameStart", "OnServerStarted", "OnClientCommand", "OnPlayerUpdate", "OnLoad",
     "OnInitGlobalModData", "OnGameTimeLoaded", "OnCreatePlayer" }
@@ -53,7 +53,7 @@ local function fromWHServer(fn)
     if type(WH) == "table" and fn == WH.StepAsyncMigrationUpdate then return true end
     local ok, file = pcall(getFilenameOfClosure, fn)
     if not ok or type(file) ~= "string" then return false end
-    file = string.gsub(file, "\\", "/")
+    file = string.lower(string.gsub(file, "\\", "/"))
     return string.sub(file, -#WH_SERVER_FILE) == WH_SERVER_FILE
 end
 
@@ -115,9 +115,13 @@ if type(Events) == "table" then
     -- our own handlers go through the game's Add (they are not WH's)
     if adds.OnGameStart then
         adds.OnGameStart(function()
-            gameStarted = true
             M.applyClientOffload()
+            gameStarted = true
             if M.isMPClient() then
+                for i = 1, #M.handlers do
+                    local h = M.handlers[i]
+                    if h.ev == "OnGameStart" and h.on then h.ran = true end
+                end
                 local on, off, list = M.clientStatus()
                 log(string.format("multiplayer client: %d of Wandering Hordes' server handlers held back, %d run "
                     .. "here: %s", off, on, list))

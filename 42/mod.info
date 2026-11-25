@@ -5,6 +5,6 @@ description=Add-on for Wandering Hordes: fixes what it costs in performance, wit
 require=\WanderingHordesCore
 category=mechanic
 versionMin=42.21
-modversion=2.0.0
+modversion=2.0.1
 poster=poster.png
 icon=icon.png

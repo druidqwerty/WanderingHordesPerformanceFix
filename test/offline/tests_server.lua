@@ -1,8 +1,8 @@
 -- server side (dedicated / co-op host's server): online players, remembered spots, safehouses
 local GRID = "WH_PassabilityGrid_v2"
 T.say("-- server")
-check(WHPerfFix and WHPerfFix.Trim and WHPerfFix.Trim.VERSION == "2.0.0", "loaded, version")
-check(T.logged("2.0.0 loaded %(server%)") ~= nil, "load line names the side")
+check(WHPerfFix and WHPerfFix.Trim and WHPerfFix.Trim.VERSION == "2.0.1", "loaded, version")
+check(T.logged("2.0.1 loaded %(server%)") ~= nil, "load line names the side")
 
 -- Kahlua's pairs(): a snapshot of the keys; a key removed meanwhile comes back with a nil value, a key
 -- added meanwhile is not visited, an exhausted iterator keeps returning nil
@@ -235,3 +235,48 @@ ModData.remove(GRID)
 WHPerfFix.Trim.passNow()
 T.tick(100, 100)
 check(ModData.get(GRID) == nil, "the add-on never creates WH's table")
+
+-- TrimIntervalMinutes shortened live from 60 to 1 applies immediately without waiting 60 minutes
+SandboxVars.WHPerfFix.TrimIntervalMinutes = 60
+T.fill(0, 0, 1999, 1999, 3)
+WHPerfFix.Trim.passNow()
+check(T.untilPass(400), "pass before interval test")
+T.fill(0, 0, 1999, 1999, 3)
+T.tick(600, 100)   -- 60 seconds elapsed (< 60 min)
+check(not WHPerfFix.Trim.status().running, "no pass yet at 1 min while interval=60")
+SandboxVars.WHPerfFix.TrimIntervalMinutes = 1
+check(T.untilPass(400), "interval=60->1 applies immediately at >=1 min elapsed")
+SandboxVars.WHPerfFix.TrimIntervalMinutes = nil
+
+-- negative y coordinates (e.g. x=100, y=-10 -> gx=10, gy=-1, k=999999) + non-integer float table key
+SandboxVars.WHPerfFix.KeepOfflinePlayers = false
+SandboxVars.WHPerfFix.KeepJoinSpots = false
+T.players = { T.player("neg", 100, -10) }
+local gneg = T.fill(-600, -600, 600, 600, 2)
+gneg[0.5] = { 1 }   -- non-integer key with table value must be ignored
+WHPerfFix.Trim.passNow()
+check(T.untilPass(400), "negative-y pass")
+check(T.has(100, -10) and T.has(0, -10) and T.has(100, -400), "negative-y buckets around player kept")
+check(not T.has(-500, -500) and not T.has(590, 590), "far negative/positive buckets removed")
+check(type(gneg[0.5]) == "table" and gneg[0.5][1] == 1, "non-integer table key untouched")
+
+-- player still at (0,0) with no other keep anchors must not wipe the grid
+T.players = { T.player("init0", 0, 0) }
+gneg = T.fill(1000, 1000, 1499, 1499, 1)
+local beforeZero = T.count(gneg)
+WHPerfFix.Trim.passNow()
+T.tick(200, 100)
+check(T.count(gneg) == beforeZero, "player at (0,0) with no other anchors does not wipe grid")
+
+-- corrupted homes entry missing coords is healed; string coords in spots are coerced
+T.gmd.WHPerfFix.homes.healed = { t = getTimestamp() }
+T.gmd.WHPerfFix.spots.strspot = { x = "1500", y = "1500", t = getTimestamp() }
+T.players = { T.player("healed", 200, 200) }
+T.tick(30, 100)
+check(T.gmd.WHPerfFix.homes.healed.x == 200 and T.gmd.WHPerfFix.homes.healed.y == 200, "corrupted home entry healed")
+SandboxVars.WHPerfFix.KeepOfflinePlayers = true
+SandboxVars.WHPerfFix.KeepJoinSpots = nil
+gneg = T.fill(0, 0, 1999, 1999, 1)
+WHPerfFix.Trim.passNow()
+check(T.untilPass(400), "pass with string coords in spots")
+check(T.has(1500, 1500), "string-encoded spot kept")

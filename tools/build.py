@@ -83,6 +83,8 @@ def offline_tests():
     for reset, tests in (("client", "tests_offload.lua"), ("server", "tests_offload_server.lua"),
                          ("sp", "tests_offload_server.lua"), ("sp", "tests_offload_late.lua")):   # the shared part
         files += [f("reset_offload_%s.lua" % reset), shared, f("wh_fake_server.lua"), f(tests)]
+    files += [f("reset_offload_client.lua"), shared, f("wh_fake_server.lua"), f("tests_offload_false.lua")]
+    files += [f("reset_offload_client_false.lua"), shared, f("wh_fake_server.lua"), f("tests_offload_join_false.lua")]
     files.append(f("summary.lua"))
     r2 = subprocess.run([os.path.join(JDK, "java"), "-cp", cp, "LuaRun"] + files,
                         capture_output=True, text=True, cwd=GAME)   # stdlib.lua is read from the game folder

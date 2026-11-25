@@ -1,6 +1,6 @@
 -- single player: the same as WH's own logic (local players); a safehouse is kept too if there is one
 T.say("-- single player")
-check(T.logged("2.0.0 loaded %(sp%)") ~= nil, "load line names the side")
+check(T.logged("2.0.1 loaded %(sp%)") ~= nil, "load line names the side")
 local g = T.fill(0, 0, 1999, 1999, 3)
 T.local_players = { T.player("me", 1500, 1500) }
 T.houses = { T.safehouse(100, 100, 5, 5) }

@@ -40,13 +40,14 @@ if WHPerfFix.Trim and WHPerfFix.Trim.loaded then return end
 WHPerfFix.Trim = WHPerfFix.Trim or {}
 local M = WHPerfFix.Trim
 M.loaded = true
-M.VERSION = WHPerfFix.VERSION or "2.0.0"
+M.VERSION = WHPerfFix.VERSION or "2.0.1"
 
 local GRID = "WH_PassabilityGrid_v2"   -- Wandering Hordes' table (WH_Server.lua getGridAndTileKeys)
 local OWN = "WHPerfFix"                 -- our own small table: where players were last seen (server only)
 local OLD_OWN = "WHSaveTrim"            -- the same table of the add-on's 1.0.0 (Wandering Hordes Save Trim)
 local BUCKET = 10                       -- WH bucket = 10x10 tiles, key = gx * 100000 + gy
 local KEY_MUL = 100000
+local KEY_HALF = 50000                  -- decodes gy in [-50000, 49999] (negative y maps too)
 local BUDGET = 400                      -- buckets checked per tick (measured: see MODLOG)
 local SAMPLE_EVERY = 64                 -- count the tiles of every 64th bucket (for the size estimate)
 local FIRST_DELAY_MS = 15000            -- first pass not before this long after the first tick
@@ -146,23 +147,22 @@ local function players()
     return out, keys
 end
 
-local function playerSquares(rects, radius, list)
-    for i = 1, #list do
-        local p = list[i]
-        local ok, x, y = pcall(function() return p:getX(), p:getY() end)
-        if ok and x and y then
-            addSquare(rects, x, y, x, y, radius)
-        end
-    end
-end
-
 -- a usable position (a player still being set up can be at 0,0)
 local function position(p)
     local ok, x, y = pcall(function() return p:getX(), p:getY() end)
-    if ok and type(x) == "number" and type(y) == "number" and x > 0 and y > 0 then
+    if ok and type(x) == "number" and type(y) == "number" and x == x and y == y and (x ~= 0 or y ~= 0) then
         return floor(x), floor(y)
     end
     return nil, nil
+end
+
+local function playerSquares(rects, radius, list)
+    for i = 1, #list do
+        local x, y = position(list[i])
+        if x then
+            addSquare(rects, x, y, x, y, radius)
+        end
+    end
 end
 
 -- server: where each player was last seen (kept while he is offline) and where he joined the game
@@ -228,7 +228,7 @@ local function track(list, keys)
                 end
                 s.x, s.y, s.t = x, y, now
                 local h = homes[name]
-                if not onlineBefore[name] or type(h) ~= "table" then
+                if not onlineBefore[name] or type(h) ~= "table" or tonumber(h.x) == nil or tonumber(h.y) == nil then
                     homes[name] = { x = x, y = y, t = now }
                 else
                     h.t = now
@@ -258,9 +258,12 @@ local function spotSquares(rects, radius, keys)
     for _, name in pairs(keys) do here[name] = true end
     local count = 0
     for name, s in pairs(spots) do
-        if not here[name] and type(s) == "table" and tonumber(s.x) and tonumber(s.y) then
-            addSquare(rects, s.x, s.y, s.x, s.y, radius)
-            count = count + 1
+        if not here[name] and type(s) == "table" then
+            local sx, sy = tonumber(s.x), tonumber(s.y)
+            if sx and sy then
+                addSquare(rects, sx, sy, sx, sy, radius)
+                count = count + 1
+            end
         end
     end
     return count
@@ -270,9 +273,12 @@ local function homeSquares(rects, radius)
     local homes = side() == "server" and ownData().homes or localHomes
     local count = 0
     for _, h in pairs(homes) do
-        if type(h) == "table" and tonumber(h.x) and tonumber(h.y) then
-            addSquare(rects, h.x, h.y, h.x, h.y, radius)
-            count = count + 1
+        if type(h) == "table" then
+            local hx, hy = tonumber(h.x), tonumber(h.y)
+            if hx and hy then
+                addSquare(rects, hx, hy, hx, hy, radius)
+                count = count + 1
+            end
         end
     end
     return count
@@ -301,10 +307,11 @@ end
 -- the pass: an iterator over a snapshot of the table's bucket keys (Kahlua's pairs() copies the key set,
 -- so removing entries while it runs is safe; buckets WH adds meanwhile are left for the next pass)
 --=============================================================================
-local pass = nil        -- the running pass
-local nextPassAt = nil  -- ms
+local pass = nil         -- the running pass
+local nextRetryAt = nil  -- ms (initial delay or retry/abort backoff)
+local lastPassEnd = nil  -- ms (when the last completed pass finished)
 local passCount = 0
-local reported = false  -- the first pass that removed something is always logged
+local reported = false   -- the first pass that removed something is always logged
 
 local function countTiles(b)
     local n = 0
@@ -356,9 +363,10 @@ local function step(p, budget, r)
             done = true
             break
         end
-        if b ~= nil and type(k) == "number" and type(b) == "table" then
+        if b ~= nil and type(k) == "number" and k == k and k > -1e15 and k < 1e15 and floor(k) == k
+                and type(b) == "table" then
             checked = checked + 1
-            local gx = floor(k / KEY_MUL)
+            local gx = floor((k + KEY_HALF) / KEY_MUL)
             local gy = k - gx * KEY_MUL
             local keep = false
             for j = 1, nr, 4 do
@@ -425,34 +433,44 @@ local function enabledNow()
     return not (type(v) == "table" and v.TrimWallMap == false)
 end
 
+local function intervalMsNow()
+    local v = SandboxVars and SandboxVars.WHPerfFix or nil
+    return clamp(type(v) == "table" and v.TrimIntervalMinutes or nil, 1, 60, 2) * 60000
+end
+
 local lastTrack = nil
 
 local function onTick()
     local now = getTimestampMs()
     if SIDE == nil then SIDE = side() end   -- settled once the game runs
-    if nextPassAt == nil then nextPassAt = now + FIRST_DELAY_MS end
+    if nextRetryAt == nil and lastPassEnd == nil then nextRetryAt = now + FIRST_DELAY_MS end
     if (lastTrack == nil or now - lastTrack >= TRACK_MS) and enabledNow() then
         lastTrack = now
         track(players())
     end
     if pass == nil then
-        if now < nextPassAt then return end   -- between passes: nothing else to do
+        if nextRetryAt ~= nil then
+            if now < nextRetryAt then return end   -- initial delay or retry backoff
+        elseif lastPassEnd ~= nil then
+            if now - lastPassEnd < intervalMsNow() then return end   -- live TrimIntervalMinutes check
+        end
         local s = readSettings()
         if not s.enabled or not startPass(s, now) then
-            nextPassAt = now + RETRY_MS        -- off, no WH table yet, or nobody to keep around
+            nextRetryAt = now + RETRY_MS        -- off, no WH table yet, or nobody to keep around
             return
         end
+        nextRetryAt = nil
     elseif not enabledNow() then
         finishPass(pass, now, "disabled")
         pass = nil
-        nextPassAt = now + RETRY_MS
+        nextRetryAt = now + RETRY_MS
         return
     end
     local p = pass
     if ModData.get(GRID) ~= p.grid then      -- the table was replaced or removed: start over next time
         finishPass(p, now, "table replaced")
         pass = nil
-        nextPassAt = now + RETRY_MS
+        nextRetryAt = now + RETRY_MS
         return
     end
     -- the squares of the pass start, plus where the players are now (a car covers a lot of ground)
@@ -468,20 +486,23 @@ local function onTick()
     if dt > p.maxMs then p.maxMs = dt end
     if done then
         pass = nil
-        nextPassAt = t1 + readSettings().intervalMs
+        nextRetryAt = nil
+        lastPassEnd = t1
         finishPass(p, t1, nil)
     end
 end
 
 -- for tests and admins: what the last pass did, and whether one is running
 function M.status()
+    local dueAt = nextRetryAt or (lastPassEnd and (lastPassEnd + intervalMsNow()) or nil)
     return { version = M.VERSION, side = side(), passes = passCount, running = pass ~= nil, last = M.last,
-             nextPassInMs = nextPassAt and (nextPassAt - getTimestampMs()) or nil }
+             nextPassInMs = dueAt and (dueAt - getTimestampMs()) or nil }
 end
 
 -- for tests: start a pass now (does not wait for the interval)
 function M.passNow()
-    nextPassAt = 0
+    nextRetryAt = 0
+    lastPassEnd = nil
 end
 
 Events.OnTick.Add(onTick)
